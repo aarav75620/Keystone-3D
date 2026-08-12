@@ -1,0 +1,19 @@
+{
+  "name": "keystone-3d",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Keystone 3D - a browser-based co-op escape room for 2-6 players. No one escapes alone.",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node test/puzzle-defs.test.mjs && node test/ring.test.mjs && node test/penalty.test.mjs && node test/vault-room.test.mjs && node test/vault-render.test.mjs && node test/brief.test.mjs && node test/vault-collars.test.mjs && node test/observatory-room.test.mjs"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1"
+  }
+}

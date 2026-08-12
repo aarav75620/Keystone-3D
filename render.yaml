@@ -1,0 +1,18 @@
+# Render deployment. Kept in the repo rather than set in the dashboard, so the
+# settings survive being forgotten and can be reviewed in a diff.
+services:
+  - type: web
+    name: keystone-3d
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    # ONE instance, permanently. Room state lives in memory, so a second
+    # instance would put player A and player B in different rooms sharing a
+    # code, with no error explaining why. Scaling out needs a Redis adapter
+    # first - see PROGRESS.md.
+    numInstances: 1
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
