@@ -742,22 +742,47 @@ export function createSpire({ dimensions, puzzle } = {}) {
     emissiveIntensity: settings.socketEmissive,
     roughness: 0.5,
   });
-  const sockets = new THREE.InstancedMesh(socketGeometry, socketMaterial, SOCKETS);
-  sockets.instanceMatrix.setUsage(THREE.StaticDrawUsage);
-  for (let i = 0; i < SOCKETS; i += 1) {
+  // SIX separate sockets, not one instanced mesh.
+  //
+  // A socket has to light on its own as its chamber falls - that is the whole
+  // completion signal - and one shared material cannot say different things
+  // about six stones. Six draws on a 12-triangle box, which is nothing, and it
+  // is the fourth time in this project that instancing had to be undone the
+  // moment the thing needed to carry state.
+  const socketMaterials = Array.from({ length: SOCKETS }, () => socketMaterial.clone());
+  const sockets = Array.from({ length: SOCKETS }, (_, i) => {
     const a = (i / SOCKETS) * Math.PI * 2;
-    m.makeRotationY(-a);
-    m.setPosition(Math.cos(a) * 1.15, SOCKET_RING_Y, Math.sin(a) * 1.15);
-    sockets.setMatrixAt(i, m);
+    const mesh = new THREE.Mesh(socketGeometry, socketMaterials[i]);
+    mesh.rotation.y = -a;
+    mesh.position.set(Math.cos(a) * 1.15, SOCKET_RING_Y, Math.sin(a) * 1.15);
+    group.add(mesh);
+    return mesh;
+  });
+  void sockets;
+
+  /** How many chambers are open, and of how many. Drives the whole room. */
+  let solvedCount = 0;
+  let chamberTotal = 0;
+
+  function applyProgress() {
+    for (let i = 0; i < SOCKETS; i += 1) {
+      // A seated stone burns; an empty socket is cold and barely there. The
+      // ring fills clockwise so the crew can read progress as a shape.
+      const seated = i < solvedCount;
+      socketMaterials[i].emissiveIntensity = seated
+        ? settings.socketEmissive * 5.5
+        : settings.socketEmissive * 0.35;
+      socketMaterials[i].color.setHex(seated ? 0xffe6b0 : 0x2a2418);
+    }
   }
-  sockets.instanceMatrix.needsUpdate = true;
-  group.add(sockets);
+  applyProgress();
 
   own({
     dispose() {
       ringGeometry.dispose();
       ringMaterial.dispose();
       socketGeometry.dispose();
+      for (const sm of socketMaterials) sm.dispose();
       socketMaterial.dispose();
     },
   });
@@ -867,6 +892,14 @@ export function createSpire({ dimensions, puzzle } = {}) {
   let dawnWindowScale = 1;
 
   // ----- animation ----------------------------------------------------------
+
+  /** Push the dawn to at least `t`, never back. */
+  function setDawnFloor(t) {
+    const target = Math.max(0, Math.min(1, t));
+    if (target * DAWN_SECONDS <= elapsedDawn) return;
+    elapsedDawn = target * DAWN_SECONDS;
+    applyDawn(target);
+  }
 
   let elapsedDawn = DAWN_START * DAWN_SECONDS;
   applyDawn(DAWN_START);
@@ -984,6 +1017,27 @@ export function createSpire({ dimensions, puzzle } = {}) {
     setDawn(progress) {
       elapsedDawn = DAWN_SECONDS;
       applyDawn(progress);
+    },
+
+    /**
+     * The completion signal. Called whenever the server's progress changes.
+     *
+     * Solving a chamber used to change nothing anyone could see - five puzzles
+     * fell and the payoff room carried on running its own clock. Now the crew's
+     * progress IS the sunrise: each chamber opened seats a stone in the ring
+     * overhead and pushes the dawn further up. The last one lands at full light.
+     *
+     * Dawn is floored at its starting value so the room never gets darker than
+     * a player found it; progress may only ever add light.
+     */
+    setProgress({ solved = 0, total = 0 } = {}) {
+      solvedCount = Math.max(0, Math.min(SOCKETS, solved));
+      chamberTotal = total;
+      applyProgress();
+      if (total > 0) {
+        const share = solved / total;
+        setDawnFloor(DAWN_START + (1 - DAWN_START) * share);
+      }
     },
 
     // No colliders and no keepInsideRadius on purpose. The engine already clamps

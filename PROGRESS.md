@@ -1490,3 +1490,38 @@ real browser window.
 Standing rule, now stated twice in this file for a reason: cache-bust the
 stylesheet before drawing any conclusion from computed styles, and check
 `visibilityState`/rAF before concluding a WebGL layer is not drawing.
+
+---
+
+## Phase 7 — the completion flow
+
+Phase 6 was NOT done despite being assumed so. `~/keystone-3d` was not a git
+repo, there was no `render.yaml`, and every test to date had been two browser
+tabs on localhost - which is explicitly not the success criterion ("two people,
+two networks"). Deploy prep is now done; the account steps still need a human.
+
+### Solving a chamber now changes the world
+
+The server tracked progress, the HUD listed it, and the world carried on exactly
+as before. Five puzzles could fall and the payoff room would not notice.
+
+`run:progress` is now forwarded to whatever room is mounted, via a new
+`engine.getMounted()` and an opt-in `room.setProgress({ solved, total })`. Rooms
+that do not implement it are simply unaffected, so it is safe to call for any
+chamber. It also fires on mount, so a player arriving mid-run sees the progress
+already made rather than a room frozen at zero.
+
+**The Spire answers it twice.** Each chamber opened seats a stone in the ring
+overhead (measured: 3 solved lights exactly 3 sockets, 16x the cold intensity)
+and pushes the dawn further up, with the last one landing at full light.
+Verified by screenshot: cold silhouette at zero solved, warm lit stone and gold
+mullions at five.
+
+Dawn is FLOORED - `setDawnFloor` will only ever raise it. A crew that solves a
+chamber must never watch the sunrise run backwards, and progress may only add
+light.
+
+The six sockets became six meshes. That is the fourth time in this project that
+instancing had to be undone the moment the object needed to carry state - drums,
+needles, lanterns, now sockets. Worth assuming from the start: if a thing will
+ever say something individually, do not instance it.

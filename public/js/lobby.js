@@ -366,6 +366,9 @@ async function mountAssignedChamber() {
 
     mountedChamberId = chamberId;
     syncSceneHud();
+    // A player who mounts mid-run must see the progress already made, not a
+    // room frozen at zero until the next chamber falls.
+    pushProgressToRoom();
   } finally {
     mounting = false;
   }
@@ -736,7 +739,26 @@ net.on('puzzle:state', (payload) => {
 
 net.on('run:progress', (payload) => {
   latestProgress = payload;
+  pushProgressToRoom();
 });
+
+/**
+ * Hand the crew's progress to the room the player is standing in.
+ *
+ * Solving a chamber used to change nothing anyone could see: the server tracked
+ * it, the HUD listed it, and the world carried on exactly as before. A room can
+ * now opt in with `setProgress` and say something about it - the Spire seats a
+ * stone in the ring overhead per chamber opened and pushes its dawn up.
+ *
+ * Rooms that do not implement it are simply unaffected, so this is safe to call
+ * for whichever chamber happens to be mounted.
+ */
+function pushProgressToRoom() {
+  const chambers = latestProgress?.chambers;
+  if (!chambers?.length || !engine) return;
+  const solved = chambers.filter((c) => c.solved).length;
+  engine.getMounted?.()?.setProgress?.({ solved, total: chambers.length });
+}
 
 net.on('room:notice', ({ text, tone, at }) => {
   addLogLine(text, tone, at);

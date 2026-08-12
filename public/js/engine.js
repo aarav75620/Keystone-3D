@@ -722,6 +722,10 @@ export function createEngine(canvas) {
     mount,
     unmount,
 
+    /** The room currently on screen, or null. Lets callers hand it state. */
+    getMounted: () => mounted,
+
+
     /** The currently mounted room, or null. Phase 4 raycasts against this. */
     get room() {
       return mounted;
