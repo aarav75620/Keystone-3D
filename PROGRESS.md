@@ -1493,7 +1493,10 @@ stylesheet before drawing any conclusion from computed styles, and check
 
 ---
 
-## Phase 7 — the completion flow
+## Phase 6 — the completion flow, and hosting
+
+(Numbered 7 in conversation by mistake; there was never a phase 7. The plan ran
+1-5 for the build and 6 for hosting plus the playtest.)
 
 Phase 6 was NOT done despite being assumed so. `~/keystone-3d` was not a git
 repo, there was no `render.yaml`, and every test to date had been two browser
