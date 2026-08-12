@@ -11,7 +11,11 @@ services:
     # instance would put player A and player B in different rooms sharing a
     # code, with no error explaining why. Scaling out needs a Redis adapter
     # first - see PROGRESS.md.
-    numInstances: 1
+    #
+    # Not set as `numInstances` on purpose: the free plan rejects that key and
+    # the blueprint fails validation. Free is single-instance anyway, so the
+    # constraint holds for free. If this ever moves to a paid plan, set
+    # numInstances: 1 explicitly and do NOT raise it.
     healthCheckPath: /healthz
     envVars:
       - key: NODE_VERSION
