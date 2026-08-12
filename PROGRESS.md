@@ -1528,3 +1528,15 @@ The six sockets became six meshes. That is the fourth time in this project that
 instancing had to be undone the moment the object needed to carry state - drums,
 needles, lanterns, now sockets. Worth assuming from the start: if a thing will
 ever say something individually, do not instance it.
+
+### Resolved: the arch renders
+
+Confirmed live on the deployed build - the WebGL arch and its motes render
+fine in a real browser. The two earlier entries calling it broken or unverified
+were both my tooling: the automated browser pane reports every tab as
+`visibilityState: 'hidden'` and fires zero rAF callbacks, so nothing driven by
+an animation loop can ever appear there.
+
+Nothing was ever wrong with the backdrop. Judge anything rAF-driven in a real
+window, or through `preview.html`, which renders synchronously via
+`engine.step()`.
