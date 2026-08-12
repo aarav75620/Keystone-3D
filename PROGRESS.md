@@ -1540,3 +1540,28 @@ an animation loop can ever appear there.
 Nothing was ever wrong with the backdrop. Judge anything rAF-driven in a real
 window, or through `preview.html`, which renders synchronously via
 `engine.step()`.
+
+### Public rooms and browsing
+
+**Opening** a room now takes a visibility. **Joining** takes either a code or a
+browse list. Both are segmented controls, one row each, and the join modes swap
+in a SHARED slot - so the two cards keep their side-by-side layout and their
+height, which is why this did not disturb the entry screen.
+
+**Private is the default, and the server re-validates it.** `createRoom` treats
+anything that is not exactly the string `'public'` as private, so a malformed or
+hostile payload cannot publish somebody's room. A room becoming discoverable has
+to be a choice the host made.
+
+`listPublicRooms()` is deliberately narrow. A room is listed only if the host
+asked for it, the run has not started, and a seat is free - listing a full or
+in-progress room is an invitation to a failure. The payload carries only what a
+join decision needs (host name, crew count, code); nothing about the puzzles,
+because this is the one thing an unauthenticated browser can request.
+`rooms:list` shares the join rate limiter for the same reason.
+
+Verified end to end against a live server: public listed, private hidden,
+started room drops off, full room drops off, and joining from a browse row
+lands in the room. The list polls only while the browse tab is actually on
+screen, and both entry paths funnel through one `joinByCode()` so validation and
+error handling exist in one place.

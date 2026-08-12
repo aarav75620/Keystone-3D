@@ -55,6 +55,7 @@ import {
   sweep,
   roomCount,
   activeRoomCodes,
+  listPublicRooms,
 } from './rooms.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -240,7 +241,9 @@ io.on('connection', (socket) => {
 
   socket.on('room:open', (payload, ack) => {
     const name = normalizeName(payload?.name);
-    const room = createRoom();
+    // The client asks; the server decides. Anything other than the exact string
+    // 'public' stays private, so a malformed payload cannot publish a room.
+    const room = createRoom({ visibility: payload?.visibility === 'public' ? 'public' : 'private' });
     const result = joinRoom({ code: room.code, name, token: null, socketId: socket.id });
 
     if (!result.ok) {
@@ -276,6 +279,18 @@ io.on('connection', (socket) => {
       { socket, room: result.room, player: result.player, rejoined: result.rejoined },
       ack,
     );
+  });
+
+  /**
+   * The browse list. Rate-limited with the same counter as join attempts: it is
+   * unauthenticated and would otherwise be a free polling endpoint.
+   */
+  socket.on('rooms:list', (_payload, ack) => {
+    if (overAttemptLimit()) {
+      replyWith(ack, fail('RATE_LIMITED'));
+      return;
+    }
+    replyWith(ack, { ok: true, rooms: listPublicRooms() });
   });
 
   socket.on('room:leave', (_payload, ack) => {

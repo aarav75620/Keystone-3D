@@ -102,6 +102,14 @@ function makeRoom() {
     createdAt: Date.now(),
     /** 'lobby' now; phase 5 adds 'playing' and 'solved'. */
     phase: 'lobby',
+    /**
+     * 'private' (code only) or 'public' (appears in the browse list).
+     *
+     * Defaults to private. A room becoming discoverable has to be something the
+     * host chose, not something that happened to them because a default was set
+     * for convenience.
+     */
+    visibility: 'private',
     /** Public id of the host. The host is whoever opened the room. */
     hostId: null,
     /** @type {Map<string, Player>} token -> player */
@@ -158,10 +166,47 @@ export function setClues(room, text, player) {
   return true;
 }
 
-export function createRoom() {
+export function createRoom({ visibility = 'private' } = {}) {
   const room = makeRoom();
+  // Anything that is not exactly 'public' stays private. An unrecognised value
+  // must never fail open into a listing.
+  room.visibility = visibility === 'public' ? 'public' : 'private';
   rooms.set(room.code, room);
   return room;
+}
+
+/**
+ * Public rooms a stranger could still usefully join.
+ *
+ * Deliberately narrow. A room is listed only if the host asked for it, the run
+ * has not started, and there is a seat free - listing a full or in-progress room
+ * is an invitation to a failure. Nothing about the puzzles is included: this is
+ * the one payload an unauthenticated browser can request, so it carries only
+ * what a join decision needs.
+ */
+export function listPublicRooms({ limit = 24 } = {}) {
+  const out = [];
+  for (const room of rooms.values()) {
+    if (room.visibility !== 'public') continue;
+    if (room.phase !== 'lobby') continue;
+
+    const players = [...room.players.values()];
+    if (players.length >= MAX_PLAYERS) continue;
+    if (players.length === 0) continue;
+
+    const host = players.find((pl) => pl.id === room.hostId) || players[0];
+    out.push({
+      code: room.code,
+      host: host?.name || '—',
+      crew: players.length,
+      maxPlayers: MAX_PLAYERS,
+      createdAt: room.createdAt,
+    });
+  }
+  // Newest first: a room opened thirty seconds ago is far likelier to still be
+  // waiting than one that has sat there for ten minutes.
+  out.sort((a, b) => b.createdAt - a.createdAt);
+  return out.slice(0, limit);
 }
 
 export function getRoom(code) {

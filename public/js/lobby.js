@@ -35,6 +35,17 @@ const el = {
 
   entryError: $('entryError'),
 
+  visPrivate: $('visPrivate'),
+  visPublic: $('visPublic'),
+  visNote: $('visNote'),
+  joinByCode: $('joinByCode'),
+  joinByBrowse: $('joinByBrowse'),
+  joinModeCode: $('joinModeCode'),
+  joinModeBrowse: $('joinModeBrowse'),
+  browseList: $('browseList'),
+  browseEmpty: $('browseEmpty'),
+  browseRefresh: $('browseRefresh'),
+
   codeCopy: $('codeCopy'),
   codeCells: $('codeCells'),
   codeHint: $('codeHint'),
@@ -586,7 +597,7 @@ el.openForm.addEventListener('submit', async (event) => {
   }
 
   setBusy(el.openSubmit, true);
-  const reply = await net.request('room:open', { name });
+  const reply = await net.request('room:open', { name, visibility });
   setBusy(el.openSubmit, false);
 
   if (!reply.ok) {
@@ -617,16 +628,9 @@ el.joinForm.addEventListener('submit', async (event) => {
     return;
   }
 
-  setBusy(el.joinSubmit, true);
-  const reply = await net.request('room:join', { code, name });
-  setBusy(el.joinSubmit, false);
-
-  if (!reply.ok) {
-    showEntryError(reply.message);
-    return;
-  }
-
-  enterRoom(reply);
+  // Both entry paths - typed code and a browse row - go through joinByCode, so
+  // there is one place that validates, joins and handles failure.
+  await joinByCode(code, el.joinSubmit);
 });
 
 // Correct the code field as it is typed rather than rejecting it on submit.
@@ -892,3 +896,138 @@ addEventListener('keydown', (e) => {
   if (document.documentElement.dataset.entry !== 'locked') return;
   if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEntryGate(); }
 });
+
+
+// ---------------------------------------------------------------------------
+// Room visibility, and browsing for open rooms
+// ---------------------------------------------------------------------------
+
+/**
+ * Whether the room this player opens will be listed publicly.
+ *
+ * Defaults to private and stays a string the server re-validates. A room
+ * becoming discoverable should be a choice the host made, not a default they
+ * were handed.
+ */
+let visibility = 'private';
+
+function setVisibility(next) {
+  visibility = next === 'public' ? 'public' : 'private';
+  const isPublic = visibility === 'public';
+
+  el.visPublic.classList.toggle('is-on', isPublic);
+  el.visPrivate.classList.toggle('is-on', !isPublic);
+  el.visPublic.setAttribute('aria-checked', String(isPublic));
+  el.visPrivate.setAttribute('aria-checked', String(!isPublic));
+
+  // Say what the choice actually does. "Public" alone does not tell a player
+  // that strangers will see their room in a list.
+  el.visNote.textContent = isPublic
+    ? 'Anyone can find this room in the browse list.'
+    : 'Only people with the code can join.';
+}
+
+el.visPrivate.addEventListener('click', () => setVisibility('private'));
+el.visPublic.addEventListener('click', () => setVisibility('public'));
+
+/** 'code' or 'browse'. Both live in the same slot, so only one is ever shown. */
+let joinMode = 'code';
+let browseTimer = 0;
+
+function setJoinMode(next) {
+  joinMode = next === 'browse' ? 'browse' : 'code';
+  const browsing = joinMode === 'browse';
+
+  el.joinByBrowse.classList.toggle('is-on', browsing);
+  el.joinByCode.classList.toggle('is-on', !browsing);
+  el.joinByBrowse.setAttribute('aria-checked', String(browsing));
+  el.joinByCode.setAttribute('aria-checked', String(!browsing));
+
+  el.joinModeBrowse.hidden = !browsing;
+  el.joinModeCode.hidden = browsing;
+
+  // Poll only while the list is actually on screen. A browse tab nobody is
+  // looking at should not be asking the server for rooms every few seconds.
+  clearInterval(browseTimer);
+  if (browsing) {
+    refreshBrowse();
+    browseTimer = setInterval(refreshBrowse, 6000);
+  }
+}
+
+el.joinByCode.addEventListener('click', () => setJoinMode('code'));
+el.joinByBrowse.addEventListener('click', () => setJoinMode('browse'));
+el.browseRefresh.addEventListener('click', () => refreshBrowse());
+
+async function refreshBrowse() {
+  const reply = await net.request('rooms:list', {});
+  if (!reply.ok) {
+    el.browseEmpty.hidden = false;
+    el.browseEmpty.textContent = 'Could not reach the server.';
+    el.browseList.replaceChildren();
+    return;
+  }
+
+  const rooms = reply.rooms || [];
+  el.browseEmpty.hidden = rooms.length > 0;
+  if (!rooms.length) {
+    el.browseEmpty.textContent = 'No open rooms right now. Open one yourself, or ask for a code.';
+  }
+
+  el.browseList.replaceChildren();
+  for (const r of rooms) {
+    const row = document.createElement('li');
+    row.className = 'browse__row';
+    // One short of full is worth flagging before someone commits to a room.
+    row.dataset.nearlyFull = String(r.crew >= r.maxPlayers - 1);
+
+    const host = document.createElement('span');
+    host.className = 'browse__host';
+    host.textContent = `${r.host}'s room`;
+
+    const crew = document.createElement('span');
+    crew.className = 'browse__crew';
+    crew.textContent = `${r.crew}/${r.maxPlayers}`;
+
+    const join = document.createElement('button');
+    join.className = 'browse__join';
+    join.type = 'button';
+    join.textContent = 'Join';
+    join.addEventListener('click', () => joinByCode(r.code, join));
+
+    row.append(host, crew, join);
+    el.browseList.append(row);
+  }
+}
+
+/**
+ * Join a specific code. Shared by the browse rows and the code form, so both
+ * paths hit exactly the same validation and error handling.
+ */
+async function joinByCode(code, button) {
+  showEntryError('');
+
+  const name = el.joinName.value.trim();
+  if (!name) {
+    showEntryError('Enter a callsign first.');
+    el.joinName.focus();
+    return;
+  }
+
+  if (button) setBusy(button, true);
+  const reply = await net.request('room:join', { name, code });
+  if (button) setBusy(button, false);
+
+  if (!reply.ok) {
+    showEntryError(reply.message);
+    // The room may have filled or started since the list was drawn.
+    if (joinMode === 'browse') refreshBrowse();
+    return;
+  }
+
+  clearInterval(browseTimer);
+  enterRoom(reply);
+}
+
+setVisibility('private');
+setJoinMode('code');

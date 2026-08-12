@@ -2453,3 +2453,147 @@ html[data-entry='open'] .statusbar   { transition-delay: 780ms; }
 .gate { padding: clamp(12px, 1.8vh, 22px) clamp(16px, 2vw, 24px); }
 .gate__blurb { margin: 0 0 clamp(8px, 1.2vh, 14px); font-size: clamp(0.76rem, 1.4vh, 0.88rem); }
 .field { margin-bottom: clamp(8px, 1.2vh, 14px); }
+
+/* --------------------------------------------------------------------------
+   Segmented control
+   Two mutually exclusive choices, shown as one object rather than two buttons,
+   so it reads as "pick a side" and not "press one of these". Used for the
+   room's visibility and for how you join. Sized to add one row to each card,
+   which is why the join modes swap in a shared slot instead of stacking.
+   -------------------------------------------------------------------------- */
+
+.seg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--hull-edge);
+  border: var(--edge);
+  margin-bottom: 8px;
+}
+
+.seg__opt {
+  appearance: none;
+  border: none;
+  border-radius: 0;
+  padding: 9px 10px;
+  background: rgba(6, 12, 22, 0.6);
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.seg__opt:hover { color: var(--text); }
+
+.seg__opt.is-on {
+  background: rgba(94, 242, 208, 0.12);
+  color: var(--holo);
+  box-shadow: inset 0 -2px 0 var(--holo);
+}
+
+.seg__opt:focus-visible {
+  outline: 1px solid var(--holo);
+  outline-offset: -3px;
+}
+
+.seg__note {
+  margin: 0 0 12px;
+  font-size: 0.76rem;
+  color: var(--text-faint);
+  min-height: 1.1em;
+}
+
+/* --------------------------------------------------------------------------
+   Browse list
+   Scrolls internally at a fixed height so a busy server cannot stretch the
+   card past the fold. Each row is one join decision: who opened it, how full
+   it is, and the code.
+   -------------------------------------------------------------------------- */
+
+.browse__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.browse__refresh {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--holo);
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.browse__refresh:hover { color: var(--holo-soft); }
+
+.browse {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  max-height: 168px;
+  overflow-y: auto;
+  border: var(--edge);
+  background: rgba(6, 12, 22, 0.45);
+}
+
+.browse__row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border-bottom: var(--edge);
+}
+
+.browse__row:last-child { border-bottom: none; }
+
+.browse__host {
+  font-size: 0.84rem;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.browse__crew {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Nearly full is worth noticing before you commit to a room. */
+.browse__row[data-nearly-full='true'] .browse__crew { color: var(--amber); }
+
+.browse__join {
+  appearance: none;
+  border: 1px solid var(--holo-deep);
+  border-radius: 0;
+  background: rgba(94, 242, 208, 0.1);
+  color: var(--holo);
+  padding: 5px 11px;
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.browse__join:hover { background: rgba(94, 242, 208, 0.2); }
+
+.browse__empty {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-faint);
+}

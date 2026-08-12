@@ -307,6 +307,14 @@
           />
         </label>
 
+        <div class="seg" role="radiogroup" aria-label="Who can find this room">
+          <button class="seg__opt is-on" type="button" role="radio" aria-checked="true"
+                  id="visPrivate" data-visibility="private">Private</button>
+          <button class="seg__opt" type="button" role="radio" aria-checked="false"
+                  id="visPublic" data-visibility="public">Public</button>
+        </div>
+        <p class="seg__note" id="visNote">Only people with the code can join.</p>
+
         <button class="btn btn--primary" type="submit" id="openSubmit">
           <span>Open room</span>
         </button>
@@ -318,6 +326,13 @@
           <h2 class="gate__title">Join a room</h2>
         </div>
         <p class="gate__blurb">Someone already has a code for you.</p>
+
+        <div class="seg" role="radiogroup" aria-label="How to join">
+          <button class="seg__opt is-on" type="button" role="radio" aria-checked="true"
+                  id="joinByCode" data-mode="code">By code</button>
+          <button class="seg__opt" type="button" role="radio" aria-checked="false"
+                  id="joinByBrowse" data-mode="browse">Browse</button>
+        </div>
 
         <label class="field">
           <span class="field__label">Your callsign</span>
@@ -334,25 +349,38 @@
           />
         </label>
 
-        <label class="field">
-          <span class="field__label">Room code</span>
-          <input
-            class="field__input field__input--code"
-            id="joinCode"
-            name="joinCode"
-            type="text"
-            maxlength="4"
-            autocomplete="off"
-            autocapitalize="characters"
-            spellcheck="false"
-            placeholder="XXXX"
-            required
-          />
-        </label>
+        <!-- Code and browse occupy the SAME slot. Only one is ever shown, so
+             the card keeps its height either way and the two entry paths stay
+             side by side rather than one pushing the layout around. -->
+        <div class="joinmode" id="joinModeCode">
+          <label class="field">
+            <span class="field__label">Room code</span>
+            <input
+              class="field__input field__input--code"
+              id="joinCode"
+              name="joinCode"
+              type="text"
+              maxlength="4"
+              autocomplete="off"
+              autocapitalize="characters"
+              spellcheck="false"
+              placeholder="XXXX"
+            />
+          </label>
 
-        <button class="btn" type="submit" id="joinSubmit">
-          <span>Join room</span>
-        </button>
+          <button class="btn" type="submit" id="joinSubmit">
+            <span>Join room</span>
+          </button>
+        </div>
+
+        <div class="joinmode" id="joinModeBrowse" hidden>
+          <div class="browse__head">
+            <span class="field__label">Open rooms</span>
+            <button class="browse__refresh" type="button" id="browseRefresh">Refresh</button>
+          </div>
+          <ol class="browse" id="browseList" aria-live="polite"></ol>
+          <p class="browse__empty" id="browseEmpty">Looking for open rooms…</p>
+        </div>
       </form>
 
     </div>
