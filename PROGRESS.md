@@ -1565,3 +1565,39 @@ started room drops off, full room drops off, and joining from a browse row
 lands in the room. The list polls only while the browse tab is actually on
 screen, and both entry paths funnel through one `joinByCode()` so validation and
 error handling exist in one place.
+
+### The rooms were lying about who held what
+
+Aarav played a two-player run - Archive and Spire - and the Archive's clue
+appeared to be in the Engine Room, a chamber nobody was in.
+
+The ring itself was fine. It is generated over OCCUPIED chambers only, verified
+live at every crew size from 2 to 5: everyone lands in a distinct chamber, and
+every key held is addressed to a chamber someone is standing in. Nobody is ever
+sent to an empty room, and `ring.test.mjs` has pinned that for a while by
+actually solving each chamber with its neighbour's key.
+
+**The art was the liar.** Three pieces of phase-3 content survived the move to a
+dynamic ring, all painted in pointer-violet:
+
+- Engine Room: `PREFIX  KC-`, commented "the Archive's missing fragment half"
+- Engine Room: a valve schedule captioned `REPORT ON REQUEST`
+- Archive: a violet `PREFIX` redaction stamped on every eighth card
+
+Pointer-violet is the game's one global semantic - "this value belongs to a
+different chamber" - and it only works while it is never wrong. These three
+advertised a hand-wired Engine-Room-to-Archive pairing from back when the
+dependency was fixed. Once the ring became per-run they were false in the exact
+colour that must not be false, and they pointed at a chamber that might have
+nobody in it. That is precisely what Aarav saw.
+
+All three are gone; the Engine Room's stencils are lime (its own hue) and the
+Archive's cards carry ordinary letter blocks. The `CHARGE` flag I had added to
+the Archive was violet too and had the same fault - a call number is resolved
+against THIS room's shelves - so it is stamped in ink now.
+
+**Static art cannot know who holds what.** The only honest carrier of a
+cross-room value is the key on the Fragment panel, which the server assigns per
+run. `test/colour-law.test.mjs` now asserts no room paints in pointer-violet, no
+room draws another chamber's name into a texture, and the phase-3 pairing does
+not come back.

@@ -149,8 +149,11 @@ function makeGlowBedTexture() {
 
 /**
  * Everything stencilled on the walls, in one atlas -> one draw call.
- * The valve numbers and the cipher prefix are pointer-violet: they are the
- * Engine Room's PAYLOAD, read aloud to other rooms, never used here.
+ *
+ * All of it is LIME - this room's own hue. Nothing stencilled here belongs to
+ * another chamber. Pointer-violet is reserved for values that do, and the only
+ * such value is the key on the Fragment panel, which the server assigns per
+ * run. Static art cannot know who holds what.
  */
 function makeStencilAtlas() {
   const width = 1024;
@@ -172,19 +175,27 @@ function makeStencilAtlas() {
   drawTrackedText(ctx, '>>>>>', 300, 110, 14);
   cells.title = [0, 0, 600, 150];
 
-  // Cell B: the valve schedule. Violet - belongs to the Archive.
-  ctx.fillStyle = POINTER_VIOLET_CSS;
+  // Cell B: the valve schedule. LIME - this room's own plumbing.
+  //
+  // Was pointer-violet and captioned "REPORT ON REQUEST", left from phase 3
+  // when the Engine Room was hand-wired to hold a fixed value for the Archive.
+  // Violet is the game's global "this belongs to another chamber" signal, so
+  // after the ring became dynamic this was a lie in the one colour that must
+  // never lie: it advertised an Engine-Room-to-Archive dependency the ring may
+  // never create, and pointed players at a chamber that might have nobody in
+  // it. The only real cross-room value is the key on the Fragment panel.
+  ctx.fillStyle = LIME_CSS;
   ctx.font = '600 40px "IBM Plex Mono", ui-monospace, monospace';
   drawTrackedText(ctx, 'V-214  V-083  V-442', 340, 200, 6);
   ctx.font = '400 22px "IBM Plex Mono", ui-monospace, monospace';
-  ctx.fillStyle = 'rgba(143,123,255,0.55)';
-  drawTrackedText(ctx, 'VALVE SCHEDULE - REPORT ON REQUEST', 340, 245, 4);
+  ctx.fillStyle = 'rgba(183,240,58,0.5)';
+  drawTrackedText(ctx, 'VALVE SCHEDULE - LOOP B', 340, 245, 4);
   cells.valves = [0, 160, 680, 110];
 
-  // Cell C: the cipher prefix. Violet - the Archive's missing fragment half.
-  ctx.fillStyle = POINTER_VIOLET_CSS;
+  // Cell C: a pressure rating. Also lime, also local. Same reason.
+  ctx.fillStyle = LIME_CSS;
   ctx.font = '600 48px "IBM Plex Mono", ui-monospace, monospace';
-  drawTrackedText(ctx, 'PREFIX  KC-', 260, 330, 8);
+  drawTrackedText(ctx, 'MAX  9.4 BAR', 260, 330, 8);
   cells.prefix = [0, 280, 520, 100];
 
   // Cell D: loop letters, lime, this room's own plumbing labels.

@@ -294,11 +294,16 @@ function makeCardAtlas(cardBySlot) {
     // rail the player has to read and it goes past at walking pace.
     const charge = cardBySlot.get(i);
     if (charge) {
-      ctx.fillStyle = POINTER_VIOLET_CSS;
-      ctx.globalAlpha = 0.9;
+      // Stamped in INK, not pointer-violet. A charge card's call number is
+      // resolved against the strips on THIS room's own shelves, so it is local
+      // data - and violet is reserved for values that belong to another
+      // chamber. Flagging it violet would send the reader looking for a room
+      // that has nothing to do with it.
+      ctx.fillStyle = INK_CSS;
+      ctx.globalAlpha = 0.92;
       ctx.fillRect(9, 26, w - 18, 20);
       ctx.globalAlpha = 1;
-      ctx.fillStyle = '#0e0b16';
+      ctx.fillStyle = VELLUM_CSS;
       ctx.font = '700 13px "IBM Plex Mono", ui-monospace, monospace';
       drawTrackedText(ctx, 'CHARGE', w / 2, 36, 2);
 
@@ -320,22 +325,19 @@ function makeCardAtlas(cardBySlot) {
     ctx.font = '700 36px "IBM Plex Mono", ui-monospace, monospace';
     drawTrackedText(ctx, code, w / 2, 53, 4);
 
-    const redacted = i % 8 === 3;
-    if (redacted) {
-      ctx.fillStyle = POINTER_VIOLET_CSS;
-      ctx.globalAlpha = 0.82;
-      ctx.fillRect(11, 84, w - 22, 24);
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = '#0e0b16';
-      ctx.font = '700 15px "IBM Plex Mono", ui-monospace, monospace';
-      drawTrackedText(ctx, 'PREFIX', w / 2, 96, 2);
-    } else {
-      const start = Math.floor(rand() * 24);
-      const block = alphabet.slice(start, start + 3);
-      ctx.fillStyle = INK_CSS;
-      ctx.font = '600 24px "IBM Plex Mono", ui-monospace, monospace';
-      drawTrackedText(ctx, block, w / 2, 96, 7);
-    }
+    // Every card carries an ordinary letter block.
+    //
+    // Every eighth one used to be stamped with a pointer-violet "PREFIX"
+    // redaction - phase 3 art from when the Archive needed a fixed prefix held
+    // by the Engine Room. Violet means "this belongs to another chamber", so
+    // once the ring became dynamic these cards were telling the player to go
+    // find a chamber that may not be in the run at all. The Archive's real
+    // dependency is the request slip named on the Fragment panel.
+    const start = Math.floor(rand() * 24);
+    const block = alphabet.slice(start, start + 3);
+    ctx.fillStyle = INK_CSS;
+    ctx.font = '600 24px "IBM Plex Mono", ui-monospace, monospace';
+    drawTrackedText(ctx, block, w / 2, 96, 7);
 
     ctx.fillStyle = 'rgba(52,43,28,0.72)';
     ctx.font = '400 12px "IBM Plex Mono", ui-monospace, monospace';
