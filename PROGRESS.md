@@ -1744,3 +1744,34 @@ vestibule.
 `test/gate.test.mjs` pins the shard maths at every crew size, the sayable
 alphabet, and - by reading server/index.js - the three lines that carry the
 security property, since they would be easy to "simplify" into a leak.
+
+### The Vestibule shipped too dark — fourth time
+
+Ambient 0.75, no key light, and a single point light at `2 + 26*share` with
+decay 2 hung 3.1m up. Defensible while the Vestibule was a lobby with nothing
+to read. It is a chamber now: the mason's marks and the seven-mark register ARE
+the puzzle, and the register hangs on the east wall, furthest from the only
+light in the room. At three players that is roughly half brightness on a wall
+four metres from the source, falling off as inverse square.
+
+Fixed against the standing rule, which was already written down and already
+ignored four times:
+
+- **ambient is the cheap lever** - 0.75 to 1.55, warmed to 0x4a4c40
+- **give the room a key** - `keyEnabled: true` at 0.55, cool grey
+- **the point light needs a floor and a gentler falloff** - base 2 to 10,
+  decay 2 to 1.2, range 26 to clear the 11.9m diagonal
+- **fog must clear the room** - fogNear was 9 in a 7.6m room, so haze sat on
+  the far wall, which is exactly where the register is. Now 16/40.
+- **the things that MUST be read carry their own light** - the marks and the
+  register are emissive now, so neither depends on a source across the room
+  that a player can stand in front of
+
+The crew effect survives: empty is still colder and dimmer than full. It just
+no longer bottoms out below legibility. Verified by screenshot at crew 1 - the
+worst case - with all seven marks and numbers readable.
+
+**The rule, restated because writing it down has not been enough:** a room is
+not finished when it looks atmospheric from the spawn point. It is finished when
+the thing the puzzle depends on is readable from where a player would stand, at
+the lowest light the room can produce.

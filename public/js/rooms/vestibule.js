@@ -566,8 +566,14 @@ export function createVestibule({ dimensions, puzzle } = {}) {
     atlasWidth: voussoirAtlas.width,
     atlasHeight: voussoirAtlas.height,
   });
+  // The marks are cut, not lit - but they are also the puzzle, so they carry a
+  // little emissive of their own. A carving that depends entirely on a light
+  // across the room is unreadable the moment anyone stands between them.
   const markMaterial = new THREE.MeshStandardMaterial({
     map: voussoirAtlas.texture,
+    emissive: 0xffffff,
+    emissiveMap: voussoirAtlas.texture,
+    emissiveIntensity: 0.42,
     transparent: true,
     roughness: 1,
     metalness: 0,
@@ -587,8 +593,13 @@ export function createVestibule({ dimensions, puzzle } = {}) {
     cell: [0, 0, registerTex.width, registerTex.height],
   }], { atlasWidth: registerTex.width, atlasHeight: registerTex.height });
 
+  // Same for the register, and more so: it hangs on the far wall, furthest from
+  // the only light in the room, and it holds the numbers the answer is made of.
   const registerMaterial = new THREE.MeshStandardMaterial({
     map: registerTex.texture,
+    emissive: 0xffffff,
+    emissiveMap: registerTex.texture,
+    emissiveIntensity: 0.5,
     transparent: true,
     roughness: 1,
     metalness: 0,
@@ -651,7 +662,10 @@ export function createVestibule({ dimensions, puzzle } = {}) {
   // an empty vestibule is nearly dark and grey, a full one is warm and bright.
   // Nothing else in this room emits at all.
 
-  const crewLight = new THREE.PointLight(BONE, 2, 22, 2);
+  // Decay 1.2, not 2. Physically correct inverse-square falloff from a single
+  // point 3.1m up left the walls - and the register on the east wall - almost
+  // unlit, and this room has no other source. Range covers the 11.9m diagonal.
+  const crewLight = new THREE.PointLight(BONE, 10, 26, 1.2);
   crewLight.position.set(0, 3.1, 0.4);
   group.add(crewLight);
 
@@ -678,8 +692,10 @@ export function createVestibule({ dimensions, puzzle } = {}) {
 
   function applyCrew() {
     const share = CREW_MAX > 0 ? Math.min(1, filled / CREW_MAX) : 0;
-    // Never fully dark: a player standing alone still has to see the arch.
-    crewLight.intensity = 2 + settings.crewLightMax * share;
+    // Never fully dark: a player standing alone still has to READ the room, not
+    // merely see the arch. The floor is what a lone player gets, and it has to
+    // be enough to work the settling out on their own.
+    crewLight.intensity = 10 + settings.crewLightMax * share;
     crewLight.color.copy(COLD).lerp(WARM, share);
     emberMaterial.color.copy(crewLight.color);
     // The ghost brightens too - the missing stone becomes more present as the
@@ -772,16 +788,28 @@ export function createVestibule({ dimensions, puzzle } = {}) {
     ],
 
     environment: {
-      // Stone, unlit, cold. The ambient is low because the crew light is meant
-      // to be the thing that changes - a generous ambient would flatten the
-      // difference between an empty vestibule and a full one, which is the only
-      // thing this room has to say.
-      ambientColour: 0x3a3d36,
-      ambientIntensity: 0.75,
-      keyEnabled: false,
+      // The crew light is still the thing that CHANGES, but it can no longer be
+      // the only thing that lights the room.
+      //
+      // This shipped at ambient 0.75 with no key, which was defensible while
+      // the Vestibule was a lobby with nothing to read. It is a chamber now: the
+      // mason's marks and the seven-mark register are the puzzle, and a puzzle
+      // you cannot see is not a puzzle. Fourth room in this project to ship too
+      // dark, and the standing rule is right there in PROGRESS.md - ambient is
+      // the cheap lever, and no room opens at its darkest state.
+      //
+      // The crew effect survives: empty is still noticeably colder and dimmer
+      // than full. It just no longer bottoms out below legibility.
+      ambientColour: 0x4a4c40,
+      ambientIntensity: 1.55,
+      keyEnabled: true,
+      keyIntensity: 0.55,
+      keyColour: 0xbfc4ad,
       fogColour: 0x14150f,
-      fogNear: 9,
-      fogFar: 26,
+      // Was 9. The room is 7.6m across and 5.2m tall, so fog starting at 9m put
+      // haze on the far wall - which is exactly where the register hangs.
+      fogNear: 16,
+      fogFar: 40,
       cameraFar: 60,
     },
   };
