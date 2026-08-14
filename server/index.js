@@ -56,6 +56,7 @@ import {
   roomCount,
   activeRoomCodes,
   listPublicRooms,
+  buildGate,
 } from './rooms.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -107,9 +108,33 @@ function sendPuzzles(room) {
   for (const player of room.players.values()) {
     if (!player.socketId || !player.chamberId) continue;
     const puzzle = room.puzzles.get(player.chamberId);
+
+    // THE SHARD. Withheld until this chamber is solved.
+    //
+    // Solving is what earns it, so the gate cannot be assembled before the work
+    // is done - and because it is withheld on the WIRE rather than hidden in
+    // the UI, opening devtools does not reveal the ending either. A player who
+    // has not solved yet is told the shard exists and what unlocks it, which is
+    // information they can act on; the value itself is simply not sent.
+    const shard = room.gate?.shards.get(player.chamberId) || null;
+    const solved = Boolean(puzzle?.solved);
+    const allSolved = room.puzzles.size > 0
+      && [...room.puzzles.values()].every((q) => q.solved);
+
     io.to(player.socketId).emit('puzzle:state', {
       chamberId: player.chamberId,
       puzzle: serializePuzzle(puzzle, { chamberName }),
+      gate: shard
+        ? {
+          index: shard.index,
+          of: shard.of,
+          // The only conditional field in the whole payload.
+          text: solved ? shard.text : null,
+          unlocked: solved,
+          allSolved,
+          open: Boolean(room.gate?.open),
+        }
+        : null,
     });
   }
 }
@@ -346,6 +371,9 @@ io.on('connection', (socket) => {
     // rejoins mid-cycle in step with everyone else, rather than restarting the
     // cycle from wherever they happened to reload.
     room.puzzles = generatePuzzles(occupied, { epoch: room.startedAt });
+    // One shard per occupied chamber. Built here, released one at a time as
+    // chambers fall - see sendPuzzles.
+    room.gate = buildGate(occupied);
     room.completedAt = 0;
 
     room.phase = 'playing';
@@ -403,6 +431,41 @@ io.on('connection', (socket) => {
     const { room, player } = here;
     if (!player.chamberId) {
       replyWith(ack, { ok: false, error: 'NO_CHAMBER', message: 'You are not in a chamber yet.' });
+      return;
+    }
+
+    // THE GATE. Once every chamber is open, the Answer Lock stops accepting
+    // chamber answers - there are none left - and accepts the assembled gate
+    // value instead. Any player may submit it, deliberately: making it the
+    // Vestibule player's job would put one person in front of the ending, which
+    // is the Alpha Gamer shape this game exists to avoid.
+    const everySolved = room.puzzles.size > 0
+      && [...room.puzzles.values()].every((q) => q.solved);
+
+    if (everySolved && room.gate && !room.gate.open) {
+      const given = String(payload?.answer || '').replace(/\s+/g, '').toUpperCase();
+      if (answersMatch(given, room.gate.value)) {
+        room.gate.open = true;
+        room.gate.openedBy = player.name;
+
+        // Everyone moves through. The client remounts on a chamber change
+        // already - mountAssignedChamber() was made re-entrant when the
+        // wrong-room bug was fixed - so this is the whole of "entering".
+        for (const p2 of room.players.values()) p2.chamberId = 'vestibule';
+
+        replyWith(ack, { ok: true, message: 'The gate is open.' });
+        broadcastNotice(room, `The keystone is set — ${player.name} opened the gate. Everyone through.`, 'good');
+        sendPuzzles(room);
+        broadcastProgress(room);
+        broadcastRoom(room);
+        return;
+      }
+
+      replyWith(ack, {
+        ok: false,
+        error: 'GATE_WRONG',
+        message: 'That is not the whole keystone. Check every shard, in order.',
+      });
       return;
     }
 

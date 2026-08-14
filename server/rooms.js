@@ -114,6 +114,13 @@ function makeRoom() {
     hostId: null,
     /** @type {Map<string, Player>} token -> player */
     players: new Map(),
+    /**
+     * The gate to the Vestibule.
+     *
+     * `{ value, shards: Map<chamberId, {index, of, text}>, open, openedBy }`
+     * Built at run start once the occupied chambers are known. Null in lobby.
+     */
+    gate: null,
     /** Timestamp the room went empty, or null while anyone holds a slot. */
     emptySince: null,
     /**
@@ -164,6 +171,32 @@ export function setClues(room, text, player) {
     at: Date.now(),
   };
   return true;
+}
+
+/**
+ * Build the gate for a run: one shard per occupied chamber.
+ *
+ * The shards concatenate IN ORDER into the value that opens the Vestibule, so
+ * no single player holds anything usable and the crew has to say them to each
+ * other. Two characters each, drawn from 2-9 only - these get read down a voice
+ * call and 0/O and 1/I are the pairs that get misheard.
+ *
+ * The shards are NOT secret from the server's point of view; the secrecy is in
+ * when they are sent. A chamber's shard stays off the wire until that chamber
+ * is solved, so the gate cannot be assembled before the work is done.
+ */
+export function buildGate(chamberIds) {
+  const SAFE = '23456789';
+  const pick = () => SAFE[Math.floor(Math.random() * SAFE.length)];
+
+  const shards = new Map();
+  const ordered = [...chamberIds];
+  ordered.forEach((id, i) => {
+    shards.set(id, { index: i + 1, of: ordered.length, text: pick() + pick() });
+  });
+
+  const value = ordered.map((id) => shards.get(id).text).join('');
+  return { value, shards, open: false, openedBy: null };
 }
 
 export function createRoom({ visibility = 'private' } = {}) {

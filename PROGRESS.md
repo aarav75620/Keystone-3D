@@ -1708,3 +1708,39 @@ The Answer Lock is back - it is a real chamber, so it has all three panels - and
 `vestibule` is in CHAMBERS. Six players now get six distinct rooms.
 
 **Still to build:** the gate shards (steps 3-5 of the finale plan above).
+
+### The gate — the finale is wired
+
+Every chamber holds one shard of the value that opens the Vestibule. The shards
+concatenate in order, so no single player holds anything usable and the crew has
+to say them to each other.
+
+**The security property is WHEN, not where.** `buildGate` holds every shard from
+the start, but `sendPuzzles` puts a shard's `text` on the wire only once that
+chamber is solved - `text: solved ? shard.text : null`. A sealed shard is
+genuinely absent from the payload rather than hidden in the UI, so opening
+devtools does not reveal the ending. The player is still told the shard exists,
+which number it is, and that solving releases it: that is information they can
+act on, and it is what makes solving your own chamber visibly matter to everyone
+else.
+
+**Any player can open the gate.** Once every chamber is solved the Answer Lock
+stops accepting chamber answers - there are none left - and accepts the
+assembled keystone. Deliberately not the Vestibule player's job: putting one
+person in front of the ending is the Alpha Gamer shape this game exists to
+prevent.
+
+Opening it sets every player's chamberId to `vestibule`. That is the whole of
+"entering", because `mountAssignedChamber()` was made re-entrant when the
+wrong-room bug was fixed - a chamber change mid-run already rebuilds the room.
+A fix from three phases ago paid for the finale.
+
+Verified end to end against a live server with three players: shards withheld
+(`text: null` for all three before anyone solved), released one at a time on
+each solve, assembled to the server's value, a wrong keystone rejected with
+GATE_WRONG, the right one accepted, and all three players moved to the
+vestibule.
+
+`test/gate.test.mjs` pins the shard maths at every crew size, the sayable
+alphabet, and - by reading server/index.js - the three lines that carry the
+security property, since they would be easy to "simplify" into a leak.

@@ -2597,3 +2597,36 @@ html[data-entry='open'] .statusbar   { transition-delay: 780ms; }
   font-size: 0.78rem;
   color: var(--text-faint);
 }
+
+/* --------------------------------------------------------------------------
+   The keystone shard
+   Everyone holds one piece of the gate. Aqua, because it is the only value in
+   the game that belongs to the WHOLE crew rather than to one other chamber -
+   rose is private and violet is one other room's, and this is neither.
+   -------------------------------------------------------------------------- */
+
+.frag-block--gate {
+  border: var(--edge);
+  border-left: 2px solid var(--holo);
+  background: rgba(94, 242, 208, 0.05);
+  padding: clamp(14px, 2vw, 20px);
+  margin-top: 14px;
+}
+
+.frag-value--gate {
+  display: block;
+  padding: 12px 14px;
+  background: rgba(6, 8, 16, 0.72);
+  border: 1px solid rgba(94, 242, 208, 0.3);
+  color: var(--holo-soft);
+  text-shadow: 0 0 12px rgba(94, 242, 208, 0.4);
+}
+
+/* Sealed: the shard exists and is not yours yet. Shown as a struck-out slot
+   rather than hidden, so the player knows there IS something to earn. */
+.frag-block--gate[data-sealed='true'] .frag-value--gate {
+  color: var(--text-faint);
+  text-shadow: none;
+  border-color: var(--hull-edge);
+  letter-spacing: 0.5em;
+}

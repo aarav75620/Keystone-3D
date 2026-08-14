@@ -10,7 +10,7 @@
   "scripts": {
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
-    "test": "node test/puzzle-defs.test.mjs && node test/ring.test.mjs && node test/penalty.test.mjs && node test/vault-room.test.mjs && node test/vault-render.test.mjs && node test/brief.test.mjs && node test/colour-law.test.mjs && node test/vault-collars.test.mjs && node test/observatory-room.test.mjs"
+    "test": "node test/puzzle-defs.test.mjs && node test/ring.test.mjs && node test/penalty.test.mjs && node test/vault-room.test.mjs && node test/vault-render.test.mjs && node test/brief.test.mjs && node test/colour-law.test.mjs && node test/gate.test.mjs && node test/vault-collars.test.mjs && node test/observatory-room.test.mjs"
   },
   "dependencies": {
     "express": "^4.21.2",

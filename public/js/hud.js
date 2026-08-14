@@ -68,6 +68,12 @@ export function createHud({
     fragKeyLabel: $('fragKeyLabel'),
     fragKeyValue: $('fragKeyValue'),
     fragKeyFor: $('fragKeyFor'),
+    fragGate: $('fragGate'),
+    fragGateIndex: $('fragGateIndex'),
+    fragGateValue: $('fragGateValue'),
+    fragGateNote: $('fragGateNote'),
+    lockLede: document.querySelector('#bodyLock .panelui__lede'),
+    lockFieldLabel: document.querySelector('#bodyLock .field__label'),
     lockoutBar: $('lockoutBar'),
     lockoutTime: $('lockoutTime'),
     lockoutFill: $('lockoutFill'),
@@ -96,6 +102,8 @@ export function createHud({
   let puzzle = null;
   /** Last public progress. */
   let progress = null;
+  /** This player's shard of the Vestibule gate, from the server. */
+  let gate = null;
   /** Wrong attempts seen this run, for the win screen. Display only. */
   let lockoutsSeen = 0;
   let runStartedAt = 0;
@@ -231,6 +239,36 @@ export function createHud({
     el.fragKeyLabel.textContent = puzzle.key.label;
     el.fragKeyValue.textContent = puzzle.key.value;
     el.fragKeyFor.textContent = puzzle.keyForChamber || 'nobody';
+
+    renderGate();
+  }
+
+  /**
+   * The keystone shard: this player's one piece of what opens the Vestibule.
+   *
+   * The server sends the VALUE only once this chamber is solved, so a sealed
+   * shard is genuinely absent from the payload rather than merely hidden here.
+   * It is still shown as a struck slot, because knowing there is something to
+   * earn is information a player can act on - and it is the thing that tells
+   * them solving their chamber matters to everyone else, not just to them.
+   */
+  function renderGate() {
+    const g = gate;
+    el.fragGate.hidden = !g;
+    if (!g) return;
+
+    el.fragGateIndex.textContent = `${g.index} of ${g.of}`;
+    el.fragGate.dataset.sealed = String(!g.unlocked);
+
+    if (g.unlocked) {
+      el.fragGateValue.textContent = g.text || '—';
+      el.fragGateNote.textContent = g.allSolved
+        ? 'Every chamber is open. Assemble all shards in order and submit them at the Answer Lock.'
+        : 'Read this to the crew. The gate needs every shard, in order.';
+    } else {
+      el.fragGateValue.textContent = '••';
+      el.fragGateNote.textContent = 'Sealed until this chamber is open. Solving it is what releases your shard.';
+    }
   }
 
   function renderProgress() {
@@ -302,7 +340,35 @@ export function createHud({
     }
   }
 
+  /**
+   * Once every chamber is open there is nothing left to submit here, so the
+   * Answer Lock becomes the gate. Any player can open it - deliberately. Making
+   * it the Vestibule player's job would put one person in front of the ending,
+   * which is the shape this game exists to avoid.
+   */
+  function applyGateMode() {
+    const gating = Boolean(gate?.allSolved && !gate?.open);
+    if (!el.lockLede) return;
+
+    if (gating) {
+      el.lockLede.textContent =
+        'Every chamber is open. Assemble all keystone shards, in order, and submit them.';
+      if (el.lockFieldLabel) el.lockFieldLabel.textContent = 'The keystone';
+      el.lockInput.maxLength = 24;
+      el.lockInput.placeholder = '—'.repeat(Math.max(2, (gate?.of || 6) * 2));
+      el.lockNote.textContent =
+        'Shard 1 first, then 2, and so on. A wrong keystone costs the crew nothing but time.';
+    } else {
+      el.lockLede.textContent =
+        'Submit when the crew agrees. A wrong answer locks this chamber for everyone.';
+      if (el.lockFieldLabel) el.lockFieldLabel.textContent = 'Solution';
+      el.lockInput.maxLength = 24;
+      el.lockInput.placeholder = '——————';
+    }
+  }
+
   function renderLockState() {
+    applyGateMode();
     const solved = puzzle?.solved;
     el.lockNote.classList.remove('is-error');
 
@@ -473,6 +539,7 @@ export function createHud({
   net.on('puzzle:state', (payload) => {
     if (!payload?.puzzle) return;
     puzzle = payload.puzzle;
+    gate = payload.gate || null;
     if (openPanelId === 'fragment') renderFragment();
     if (openPanelId === 'lock') renderLockState();
     // Keep the countdown alive even with the panel shut, so reopening it shows
