@@ -1623,3 +1623,50 @@ chamber that is not machinery.
 
 Registered in `scenes.js` and previewable at `preview.html?room=vestibule`.
 NOT yet in the server's CHAMBERS list, so nobody can be assigned there yet.
+
+### The Vestibule as the finale — DESIGN AGREED, NOT YET BUILT
+
+Aarav revised it mid-build: the Vestibule is not a lobby. It is a real sixth
+chamber AND the shared destination, reached through a second layer that needs
+the whole crew.
+
+**Agreed mechanics:**
+
+1. The Vestibule joins the ring as a normal chamber. Whoever is there has their
+   own puzzle and holds a key, exactly like the other five.
+2. Every chamber's Fragment gains a **vestibule section** carrying one shard of
+   a gate value.
+3. A shard becomes readable **only once that player solves their own chamber**.
+   That is what keeps the chamber puzzles load-bearing: the gate cannot open
+   until every chamber has fallen, and nobody can rush ahead to the ending.
+4. The crew reads shards to each other and **one player submits the assembled
+   value** into their Answer Lock. A deliberate act by the crew, reusing the
+   lock and lockout machinery that already exists.
+5. The gate opens and **every player moves to the Vestibule** for the finale.
+
+Rejected, and why: opening automatically on all-chambers-solved makes the shards
+decorative - nobody would have to share them, which removes the only reason they
+exist. Letting the Vestibule player alone submit makes one person a bottleneck,
+which is the Alpha Gamer problem this game exists to prevent.
+
+**Build order** (each step is independently verifiable):
+
+1. **A Vestibule puzzle def.** Prerequisite for everything: adding `vestibule`
+   to `CHAMBERS` without one makes `defFor()` fall through to the observatory
+   and silently hand the wrong puzzle. Needs an observe/deduce/derive design of
+   its own, in a room that deliberately has no machinery - the arch, the crew
+   light and the stone are all it has to work with.
+2. **Restore its Answer Lock.** The room currently builds two panels; as a real
+   chamber it needs three.
+3. **Gate value and shards, server-side.** Generated at run start, split one per
+   occupied chamber, held in room state. A shard is withheld from
+   `serializePuzzle` until that chamber is solved - it must never be on the wire
+   early, or devtools reads the ending.
+4. **The Fragment's vestibule section**, showing either the shard or why it is
+   still locked.
+5. **Gate submission**, and on success reassign every player to the vestibule.
+   The remount path this needs already works - `mountAssignedChamber()` was made
+   re-entrant when the wrong-room bug was fixed, so a chamber change mid-run
+   already rebuilds the room correctly.
+
+Step 5 is nearly free because of that earlier fix. Step 1 is the real work.
