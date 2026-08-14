@@ -1601,3 +1601,25 @@ cross-room value is the key on the Fragment panel, which the server assigns per
 run. `test/colour-law.test.mjs` now asserts no room paints in pointer-violet, no
 room draws another chamber's name into a texture, and the phase-3 pairing does
 not come back.
+
+## The Vestibule — the room
+
+Built to the ROOMS.md design. 7.6 x 7.6 x 5.2m of quarried stone, and the only
+chamber that is not machinery.
+
+- **The absent keystone.** Six voussoirs stand on plinths with an 18-degree gap
+  at top dead centre, and the stone that belongs there is drawn as a dashed aqua
+  wireframe. Aqua because the missing piece is the crew's.
+- **No lamps, and no ceiling strips.** Every other room hangs four. This is the
+  one place the shell pattern is broken on purpose, so the break has to read as
+  a choice rather than an oversight.
+- **The crew light.** One PointLight whose intensity AND hue are `filled / 6` -
+  cold grey and barely lit when empty, warm and bright when full. The ghost of
+  the crown stone brightens with it. The design thesis in one float.
+- **Two panels, not three.** No Answer Lock in the room as first built.
+- Carved inscription, cut rather than printed: AN ARCH STANDS ONLY WHEN EVERY
+  STONE IS SET. It names no other chamber - the colour law from the last entry
+  applies here too.
+
+Registered in `scenes.js` and previewable at `preview.html?room=vestibule`.
+NOT yet in the server's CHAMBERS list, so nobody can be assigned there yet.

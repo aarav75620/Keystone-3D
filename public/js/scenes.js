@@ -41,6 +41,7 @@ const REGISTRY = {
   spire: { module: './rooms/spire.js', factory: 'createSpire' },
   // The phase-3 proving room, and the fallback when an assigned chamber cannot
   // be loaded. Something to stand in beats a black screen.
+  vestibule: { module: './rooms/vestibule.js', factory: 'createVestibule' },
   'room-one': { module: './rooms/room-one.js', factory: 'createRoomOne' },
 };
 
