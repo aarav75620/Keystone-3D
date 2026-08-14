@@ -26,6 +26,9 @@ export const CHAMBERS = [
   { id: 'observatory', name: 'The Observatory' },
   { id: 'vault', name: 'The Vault' },
   { id: 'spire', name: 'The Spire' },
+  // Sixth and last. A real chamber with its own puzzle, and also the shared
+  // destination - see the finale design in PROGRESS.md.
+  { id: 'vestibule', name: 'The Vestibule' },
 ];
 
 /** Minimum crew for the dependency graph to be solvable. See ROOMS.md §1. */

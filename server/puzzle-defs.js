@@ -605,6 +605,110 @@ const spire = {
   },
 };
 
+
+// ---------------------------------------------------------------------------
+// VESTIBULE - "The Settling"
+//
+// The only chamber with no machinery in it. An arch missing its crown stone is
+// not a finished structure, it is a structure under load, and that is the whole
+// instrument: the voussoirs take the thrust one at a time and you read the order.
+//
+// THE DEDUCTION: what holds a stone up is the stones on either side of it. The
+// neighbour names one mark; you report the two that carry it. Every other room
+// reads a thing directly - this one reads a thing's neighbours, and it is the
+// design thesis stated as a mechanic.
+// ---------------------------------------------------------------------------
+
+const MASON_MARKS = ['tally', 'wedge', 'fork', 'crook', 'ladder', 'comb', 'hook'];
+const ARCH_STONES = 6;
+
+const vestibule = {
+  id: 'vestibule',
+  keyKind: 'thrust',
+  keyLabel: 'THRUST LINE',
+
+  brief: {
+    title: 'THE SETTLING \u2014 6 STONES, 7 MARKS',
+    lines: [
+      'The arch has no crown stone, so it is not resting. It is working.',
+      '',
+      'Each voussoir takes the thrust in turn and shows it along the joint. One at a time, round and round.',
+      '',
+      'MASON\u2019S REGISTER',
+      'Seven marks were cut for this arch. Six of them stand in it.',
+      '',
+      'An arch is held up by the stones on either side of it.',
+      '',
+      'Your neighbour names one mark. Report the two that carry it.',
+    ],
+    submit: 'Four digits. No spaces.',
+  },
+
+  build(rand) {
+    // All seven marks get a stone number; six of them are set in the arch and
+    // one is the crown that was never placed. Which one is absent is part of
+    // what the player has to notice.
+    const marks = shuffle(rand, MASON_MARKS);
+    // Two digits drawn from 2-9 only. These numbers are read out loud down a
+    // voice call, and 0/O and 1/I are the two pairs that get misheard - the
+    // whole game is people saying values to each other, so the alphabet has to
+    // survive being spoken. 64 combinations for 7 stones is ample.
+    const SAFE = '23456789';
+    const numbers = [];
+    while (numbers.length < MASON_MARKS.length) {
+      const n = SAFE[Math.floor(rand() * SAFE.length)] + SAFE[Math.floor(rand() * SAFE.length)];
+      if (!numbers.includes(n)) numbers.push(n);
+    }
+
+    const register = marks.map((mark, i) => ({ mark, number: numbers[i] }));
+    const absent = register[Math.floor(rand() * register.length)].mark;
+    const inArch = register.filter((r) => r.mark !== absent).map((r) => r.mark);
+
+    // The order the stones take the load. A cycle, not a line: an arch keeps
+    // passing thrust round, which is also why "before" and "after" always
+    // exist - there is no first stone and no last one.
+    const settling = shuffle(rand, inArch);
+
+    // The named stone must not be its own neighbour, so a 6-cycle is the
+    // minimum for this to mean anything. It always is.
+    const named = settling[Math.floor(rand() * settling.length)];
+
+    const config = {
+      register,
+      absent,
+      settling,
+      stones: ARCH_STONES,
+      beatSeconds: 2.6,
+      cycleSeconds: ARCH_STONES * 2.6,
+    };
+
+    const keyValue = `THRUST ON ${named.toUpperCase()}`;
+    return {
+      answer: vestibule.solve(config, { kind: vestibule.keyKind, value: keyValue }),
+      keyValue,
+      config,
+    };
+  },
+
+  solve(config, key) {
+    if (key?.kind !== vestibule.keyKind) return '';
+    const match = /THRUST ON\s+([A-Z-]+)/i.exec(String(key.value));
+    if (!match) return '';
+
+    const named = match[1].toLowerCase();
+    const order = config.settling;
+    const at = order.indexOf(named);
+    if (at === -1) return '';
+
+    const numberOf = (mark) => config.register.find((r) => r.mark === mark)?.number || '';
+    // Wrap: the load path is a ring, so the first stone's predecessor is the
+    // last one. A player reading it off the arch sees exactly that.
+    const before = order[(at - 1 + order.length) % order.length];
+    const after = order[(at + 1) % order.length];
+    return `${numberOf(before)}${numberOf(after)}`;
+  },
+};
+
 // ---------------------------------------------------------------------------
 
 export const PUZZLE_DEFS = {
@@ -613,6 +717,7 @@ export const PUZZLE_DEFS = {
   'engine-room': engineRoom,
   archive,
   spire,
+  vestibule,
 };
 
 /** Fallback for a chamber with no bespoke puzzle (room-one). */

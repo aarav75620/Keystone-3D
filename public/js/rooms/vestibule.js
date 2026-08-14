@@ -23,8 +23,12 @@
 // game: absence should read as desaturation rather than as another colour, so
 // that arriving crew are a real chromatic event rather than a hue change.
 //
-// No Answer Lock. The Vestibule is a lobby and a relay, not a puzzle chamber, so
-// it carries the Fragment and Clue Board panels only.
+// A FULL CHAMBER. It carries all three panels and its own puzzle - THE SETTLING.
+// The arch has no crown stone, so it is not resting: the voussoirs take the
+// thrust one at a time and the order is the observable. A wall register lists
+// seven mason's marks; the arch holds six, and the seventh is the stone that was
+// never placed. The neighbour names one mark and you report the two that carry
+// it, because what holds a stone up is the stones on either side of it.
 
 import * as THREE from 'three';
 import {
@@ -188,6 +192,135 @@ function makeInscriptionTexture() {
   return { texture: toTexture(canvas), width, height };
 }
 
+
+/**
+ * The seven mason's marks. Cut shapes, not letters - a quarry marked stone with
+ * a chisel and a straight edge, and it keeps the Vestibule's vocabulary
+ * distinct from the Vault's engraved glyphs.
+ */
+function drawMark(ctx, kind, r) {
+  ctx.beginPath();
+  switch (kind) {
+    case 'tally':
+      for (const dx of [-r * 0.6, -r * 0.2, r * 0.2]) {
+        ctx.moveTo(dx, -r); ctx.lineTo(dx, r);
+      }
+      ctx.moveTo(-r * 0.8, r * 0.6); ctx.lineTo(r * 0.5, -r * 0.6);
+      ctx.stroke();
+      break;
+    case 'wedge':
+      ctx.moveTo(0, -r); ctx.lineTo(r * 0.7, r); ctx.lineTo(-r * 0.7, r);
+      ctx.closePath(); ctx.stroke();
+      break;
+    case 'fork':
+      ctx.moveTo(0, r); ctx.lineTo(0, -r * 0.1);
+      ctx.moveTo(0, -r * 0.1); ctx.lineTo(-r * 0.7, -r);
+      ctx.moveTo(0, -r * 0.1); ctx.lineTo(r * 0.7, -r);
+      ctx.stroke();
+      break;
+    case 'crook':
+      ctx.moveTo(-r * 0.4, r);
+      ctx.lineTo(-r * 0.4, -r * 0.4);
+      ctx.quadraticCurveTo(-r * 0.4, -r, r * 0.4, -r * 0.7);
+      ctx.stroke();
+      break;
+    case 'ladder':
+      ctx.moveTo(-r * 0.55, -r); ctx.lineTo(-r * 0.55, r);
+      ctx.moveTo(r * 0.55, -r); ctx.lineTo(r * 0.55, r);
+      for (const y of [-r * 0.5, 0, r * 0.5]) {
+        ctx.moveTo(-r * 0.55, y); ctx.lineTo(r * 0.55, y);
+      }
+      ctx.stroke();
+      break;
+    case 'comb':
+      ctx.moveTo(-r * 0.8, -r * 0.5); ctx.lineTo(r * 0.8, -r * 0.5);
+      for (const dx of [-r * 0.5, 0, r * 0.5]) {
+        ctx.moveTo(dx, -r * 0.5); ctx.lineTo(dx, r * 0.7);
+      }
+      ctx.stroke();
+      break;
+    default: // 'hook'
+      ctx.moveTo(r * 0.4, -r);
+      ctx.lineTo(r * 0.4, r * 0.3);
+      ctx.quadraticCurveTo(r * 0.4, r, -r * 0.4, r * 0.6);
+      ctx.stroke();
+      break;
+  }
+}
+
+/**
+ * The mason's register, cut into the north wall: all SEVEN marks the quarry
+ * made for this arch, each with its stone number.
+ *
+ * Seven, not six. The arch holds six of them, and working out which one never
+ * got placed is half of what the room asks - the crown stone is identified by
+ * its absence, which is the only way anything is identified in here.
+ */
+function makeRegisterTexture(register) {
+  const width = 1024;
+  const height = 320;
+  const canvas = newCanvas(width, height);
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, width, height);
+  ctx.textBaseline = 'middle';
+
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.font = '600 30px "Chakra Petch", "IBM Plex Mono", monospace';
+  drawTrackedText(ctx, "MASON'S REGISTER", width / 2, 36, 8);
+  ctx.fillStyle = 'rgba(226,224,206,0.4)';
+  drawTrackedText(ctx, "MASON'S REGISTER", width / 2, 34, 8);
+
+  const cell = width / register.length;
+  register.forEach((entry, i) => {
+    const cx = i * cell + cell / 2;
+
+    // Carved: a dark cut with a pale lip below it.
+    ctx.save();
+    ctx.translate(cx, 150);
+    ctx.lineWidth = 7;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+    drawMark(ctx, entry.mark, 40);
+    ctx.translate(0, -2);
+    ctx.strokeStyle = 'rgba(226,224,206,0.42)';
+    drawMark(ctx, entry.mark, 40);
+    ctx.restore();
+
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.font = '700 46px "IBM Plex Mono", ui-monospace, monospace';
+    drawTrackedText(ctx, entry.number, cx, 244, 4);
+    ctx.fillStyle = BONE_CSS;
+    drawTrackedText(ctx, entry.number, cx, 242, 4);
+  });
+
+  return { texture: toTexture(canvas), width, height };
+}
+
+/** One voussoir's face: its mark, cut large enough to read across the room. */
+function makeVoussoirAtlas(marks) {
+  const cell = 128;
+  const width = cell * marks.length;
+  const canvas = newCanvas(width, cell);
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, width, cell);
+
+  const cells = marks.map((mark, i) => {
+    ctx.save();
+    ctx.translate(i * cell + cell / 2, cell / 2);
+    ctx.lineWidth = 9;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+    drawMark(ctx, mark, 40);
+    ctx.translate(0, -2.5);
+    ctx.strokeStyle = 'rgba(232,230,212,0.85)';
+    drawMark(ctx, mark, 40);
+    ctx.restore();
+    return [i * cell, 0, cell, cell];
+  });
+
+  return { texture: toTexture(canvas), cells, width, height: cell };
+}
+
 // ---------------------------------------------------------------------------
 // The arch
 // ---------------------------------------------------------------------------
@@ -260,8 +393,23 @@ function crownGhostGeometry(rInner, rOuter, thetaStart, thetaLength, depth) {
 
 // ---------------------------------------------------------------------------
 
-export function createVestibule({ dimensions } = {}) {
+export function createVestibule({ dimensions, puzzle } = {}) {
   void dimensions;
+
+  // The arrangement the server generated: which mark is cut on each voussoir,
+  // which mark was never placed, and the order the stones take the thrust.
+  const cfg = puzzle?.config || null;
+  const register = cfg?.register || [
+    { mark: 'tally', number: '34' }, { mark: 'wedge', number: '52' },
+    { mark: 'fork', number: '76' }, { mark: 'crook', number: '23' },
+    { mark: 'ladder', number: '68' }, { mark: 'comb', number: '95' },
+    { mark: 'hook', number: '47' },
+  ];
+  const absentMark = cfg?.absent || 'fork';
+  const settling = cfg?.settling
+    || register.filter((r) => r.mark !== absentMark).map((r) => r.mark);
+  const beatSeconds = cfg?.beatSeconds || 2.6;
+
   const room = ROOM;
   const group = new THREE.Group();
 
@@ -325,15 +473,26 @@ export function createVestibule({ dimensions } = {}) {
     ));
   }
 
-  const archGeometry = mergeGeometries(voussoirParts);
-  for (const g of voussoirParts) g.dispose();
-
-  const archMaterial = new THREE.MeshStandardMaterial({
+  // SIX separate voussoirs, not one merged mesh.
+  //
+  // Each stone has to show when it is carrying the thrust, which is the entire
+  // puzzle, and one shared material cannot say different things about six
+  // stones. Fifth time in this project that merging had to be undone the moment
+  // an object needed to carry state - by now the rule is: if it will ever speak
+  // individually, do not merge it.
+  const archMaterials = voussoirParts.map(() => new THREE.MeshStandardMaterial({
     color: 0x6f7263,
+    emissive: 0xffb27a,
+    emissiveIntensity: 0,
     roughness: 0.95,
     metalness: 0.02,
+  }));
+  const stones = voussoirParts.map((g, i) => {
+    const mesh = new THREE.Mesh(g, archMaterials[i]);
+    archGroup.add(mesh);
+    return mesh;
   });
-  archGroup.add(new THREE.Mesh(archGeometry, archMaterial));
+  void stones;
 
   // The springing blocks the arch stands on, so it does not float.
   const plinthGeometry = new THREE.BoxGeometry(0.74, 0.34, ARCH_DEPTH + 0.16);
@@ -367,12 +526,81 @@ export function createVestibule({ dimensions } = {}) {
 
   own({
     dispose() {
-      archGeometry.dispose();
-      archMaterial.dispose();
+      for (const g of voussoirParts) g.dispose();
+      for (const m of archMaterials) m.dispose();
       plinthGeometry.dispose();
       plinthMaterial.dispose();
       ghostGeometry.dispose();
       ghostMaterial.dispose();
+    },
+  });
+
+  // ----- the marks and the register ----------------------------------------
+  // Each standing stone carries its mason's mark on the face toward the room.
+  // The settling order is an order of MARKS, so the mark has to be readable
+  // from where the player stands or the sequence is unreadable.
+
+  const archMarks = settling.slice();
+  const voussoirAtlas = makeVoussoirAtlas(archMarks);
+  textures.push(voussoirAtlas.texture);
+
+  const markQuads = [];
+  for (let i = 0; i < VOUSSOIRS; i += 1) {
+    const before = i < VOUSSOIRS / 2;
+    const t = before
+      ? i * step
+      : gapStart + CROWN_GAP + (i - VOUSSOIRS / 2) * step;
+    const mid = t + step / 2;
+    const rMid = (ARCH_R_INNER + ARCH_R_OUTER) / 2;
+    markQuads.push({
+      width: 0.42,
+      height: 0.42,
+      // Sat just proud of the stone's front face, on the same radius.
+      position: [Math.cos(mid) * rMid, Math.sin(mid) * rMid + 0.05, ARCH_DEPTH / 2 + 0.012],
+      rotation: [0, 0, 0],
+      cell: voussoirAtlas.cells[i],
+    });
+  }
+
+  const markGeometry = makeAtlasQuads(markQuads, {
+    atlasWidth: voussoirAtlas.width,
+    atlasHeight: voussoirAtlas.height,
+  });
+  const markMaterial = new THREE.MeshStandardMaterial({
+    map: voussoirAtlas.texture,
+    transparent: true,
+    roughness: 1,
+    metalness: 0,
+  });
+  group.add(new THREE.Mesh(markGeometry, markMaterial));
+
+  // The register: all SEVEN marks with their stone numbers, cut into the east
+  // wall. Six of them stand in the arch; the seventh never got placed.
+  const registerTex = makeRegisterTexture(register);
+  textures.push(registerTex.texture);
+
+  const registerGeometry = makeAtlasQuads([{
+    width: 4.6,
+    height: 1.44,
+    position: [halfW - 0.03, 2.0, 0],
+    rotation: [0, -Math.PI / 2, 0],
+    cell: [0, 0, registerTex.width, registerTex.height],
+  }], { atlasWidth: registerTex.width, atlasHeight: registerTex.height });
+
+  const registerMaterial = new THREE.MeshStandardMaterial({
+    map: registerTex.texture,
+    transparent: true,
+    roughness: 1,
+    metalness: 0,
+  });
+  group.add(new THREE.Mesh(registerGeometry, registerMaterial));
+
+  own({
+    dispose() {
+      markGeometry.dispose();
+      markMaterial.dispose();
+      registerGeometry.dispose();
+      registerMaterial.dispose();
     },
   });
 
@@ -405,9 +633,6 @@ export function createVestibule({ dimensions } = {}) {
   });
 
   // ----- panels -------------------------------------------------------------
-  // TWO panels, not three. The Vestibule has no Answer Lock: it is a lobby and
-  // a relay, and there is nothing here to submit.
-
   const bank = own(makePanelBank({
     wallZ: -halfD,
     eyeHeight: room.eyeHeight,
@@ -416,13 +641,10 @@ export function createVestibule({ dimensions } = {}) {
   }));
   group.add(bank.group);
 
-  // Drop the lock panel from the bank rather than building a second helper.
-  const lockPanel = bank.panels.find((p) => p.id === 'lock');
-  if (lockPanel) {
-    lockPanel.screen.parent?.removeFromParent?.();
-    lockPanel.screen.visible = false;
-  }
-  const panels = bank.panels.filter((p) => p.id !== 'lock');
+  // THREE panels. The Vestibule was first built as a lobby with no Answer Lock,
+  // but it is a chamber in the ring now - somebody stands here, solves the
+  // settling, and submits like everyone else.
+  const panels = bank.panels;
 
   // ----- the crew light -----------------------------------------------------
   // The whole thesis in one float. Intensity and hue are `filled / CREW_MAX`:
@@ -476,6 +698,33 @@ export function createVestibule({ dimensions } = {}) {
     // reads as stillness rather than as a frozen frame.
     const breath = 0.94 + 0.06 * Math.sin(elapsed * 0.9);
     ember.scale.setScalar(breath);
+
+    // THE SETTLING. An arch with no crown stone is not resting, it is working:
+    // the thrust passes from stone to stone, one at a time, round and round.
+    // The order is the server's, and it is the whole observable.
+    //
+    // Driven off the shared run clock, so two players standing here watch the
+    // same stone take the load at the same moment.
+    const loop = beatSeconds * VOUSSOIRS;
+    const at = ((elapsed % loop) + loop) % loop;
+    const index = Math.floor(at / beatSeconds);
+    const withinBeat = (at - index * beatSeconds) / beatSeconds;
+
+    // The mark whose turn it is. `settling` is an order of MARKS, and the
+    // stones were built carrying those marks in the same order, so the beat
+    // index addresses the stone directly.
+    for (let i = 0; i < archMaterials.length; i += 1) {
+      // Load comes on fast and eases off - a stone takes weight suddenly and
+      // sheds it slowly, and a symmetric pulse reads as a blinking light
+      // rather than as something bearing down.
+      let load = 0;
+      if (i === index) {
+        load = withinBeat < 0.18
+          ? withinBeat / 0.18
+          : Math.max(0, 1 - (withinBeat - 0.18) / 0.62);
+      }
+      archMaterials[i].emissiveIntensity = load * 1.35;
+    }
 
     for (const panel of panels) {
       const wave = Math.sin(elapsed * 0.8 + panel.id.length);

@@ -1670,3 +1670,41 @@ which is the Alpha Gamer problem this game exists to prevent.
    already rebuilds the room correctly.
 
 Step 5 is nearly free because of that earlier fix. Step 1 is the real work.
+
+### The Vestibule's puzzle — THE SETTLING
+
+Picked over the alternatives because it is the only one that could not be moved
+to another room. Every other chamber has machinery to watch; this one has an
+arch, and an arch missing its crown stone is not resting - it is working.
+
+**Observe.** The six voussoirs take the thrust one at a time, one per 2.6s,
+round and round. The order is the server's and it is the whole observable.
+
+**Deduce.** A register cut into the east wall lists SEVEN mason's marks with a
+two-digit stone number each. The arch holds six. The seventh is the stone that
+was never placed, identified only by its absence - the one thing in this game
+you work out by what is missing.
+
+**Derive.** The neighbour's THRUST LINE names one mark. You report the numbers
+of the stones that settle immediately before and after it, wrapping, because the
+load path is a ring.
+
+That last step is the design thesis as a mechanic: **what holds a stone up is
+the stones on either side of it.** No other chamber reads a thing's neighbours
+rather than the thing itself.
+
+Verified: six stones glow in exactly the server's order, the absent mark never
+appears in the arch, and reading the room by hand reproduces the server's
+answer. The voussoirs became six separate meshes - the fifth time in this
+project that merging had to be undone the moment an object needed to carry
+state. The rule is now explicit in the file: if it will ever speak
+individually, do not merge it.
+
+An existing test caught the first version: stone numbers ran 21-98, and answers
+are read out loud down a voice call where 0/O and 1/I get misheard. The alphabet
+is 2-9 only now.
+
+The Answer Lock is back - it is a real chamber, so it has all three panels - and
+`vestibule` is in CHAMBERS. Six players now get six distinct rooms.
+
+**Still to build:** the gate shards (steps 3-5 of the finale plan above).
